@@ -80,8 +80,15 @@ export class ChartAnalyzerComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   ngOnInit(): void {
-    this.loadChartData();
-    this.setupAutoRefresh();
+    console.log('ChartAnalyzer: ngOnInit started');
+    try {
+      this.loadChartData();
+      this.setupAutoRefresh();
+      console.log('ChartAnalyzer: Initialization complete');
+    } catch (error) {
+      console.error('ChartAnalyzer: Error in ngOnInit', error);
+      alert('Error al inicializar el gráfico: ' + (error as Error).message);
+    }
   }
 
   ngAfterViewInit(): void {
@@ -175,6 +182,7 @@ export class ChartAnalyzerComponent implements OnInit, OnDestroy, AfterViewInit 
    * Carga los datos del gráfico
    */
   private loadChartData(): void {
+    console.log('Loading chart data for:', this.selectedPair.symbol, this.selectedTimeframe.value);
     this.isLoading = true;
 
     this.cryptoDataService
@@ -182,12 +190,14 @@ export class ChartAnalyzerComponent implements OnInit, OnDestroy, AfterViewInit 
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
+          console.log('Chart data received:', data.length, 'candles');
           this.updateChart(data);
           this.updateStats();
           this.isLoading = false;
         },
         error: (error) => {
           console.error('Error loading chart data:', error);
+          alert('Error al cargar datos: ' + error.message + '\n\nIntenta recargar la página.');
           this.isLoading = false;
         }
       });
