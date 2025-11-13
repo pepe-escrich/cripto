@@ -85,7 +85,10 @@ export class ChartAnalyzerComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   ngAfterViewInit(): void {
-    this.initializeChart();
+    // Usar setTimeout para asegurar que el DOM esté completamente renderizado
+    setTimeout(() => {
+      this.initializeChart();
+    }, 100);
   }
 
   ngOnDestroy(): void {
@@ -103,50 +106,60 @@ export class ChartAnalyzerComponent implements OnInit, OnDestroy, AfterViewInit 
    * Inicializa el gráfico de TradingView Lightweight Charts
    */
   private initializeChart(): void {
-    if (!this.chartContainer) {
-      return;
+    try {
+      if (!this.chartContainer) {
+        console.warn('Chart container not available');
+        return;
+      }
+
+      const container = this.chartContainer.nativeElement;
+      if (!container) {
+        console.warn('Container element not found');
+        return;
+      }
+
+      this.chart = createChart(container, {
+        width: container.clientWidth || 800,
+        height: 500,
+        layout: {
+          background: { color: '#1a1a1a' },
+          textColor: '#d1d4dc',
+        },
+        grid: {
+          vertLines: { color: '#2B2B43' },
+          horzLines: { color: '#2B2B43' },
+        },
+        crosshair: {
+          mode: 1,
+        },
+        rightPriceScale: {
+          borderColor: '#2B2B43',
+        },
+        timeScale: {
+          borderColor: '#2B2B43',
+          timeVisible: true,
+          secondsVisible: false,
+        },
+      });
+
+      // Crear serie de candlesticks
+      this.candlestickSeries = (this.chart as any).addCandlestickSeries({
+        upColor: '#26a69a',
+        downColor: '#ef5350',
+        borderVisible: false,
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350',
+      });
+
+      // Handle resize
+      window.addEventListener('resize', this.handleResize.bind(this));
+
+      // Cargar datos
+      this.loadChartData();
+    } catch (error) {
+      console.error('Error initializing chart:', error);
+      this.isLoading = false;
     }
-
-    const container = this.chartContainer.nativeElement;
-
-    this.chart = createChart(container, {
-      width: container.clientWidth,
-      height: 500,
-      layout: {
-        background: { color: '#1a1a1a' },
-        textColor: '#d1d4dc',
-      },
-      grid: {
-        vertLines: { color: '#2B2B43' },
-        horzLines: { color: '#2B2B43' },
-      },
-      crosshair: {
-        mode: 1,
-      },
-      rightPriceScale: {
-        borderColor: '#2B2B43',
-      },
-      timeScale: {
-        borderColor: '#2B2B43',
-        timeVisible: true,
-        secondsVisible: false,
-      },
-    });
-
-    // Crear serie de candlesticks
-    this.candlestickSeries = (this.chart as any).addCandlestickSeries({
-      upColor: '#26a69a',
-      downColor: '#ef5350',
-      borderVisible: false,
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
-    });
-
-    // Handle resize
-    window.addEventListener('resize', this.handleResize.bind(this));
-
-    // Cargar datos
-    this.loadChartData();
   }
 
   private handleResize(): void {

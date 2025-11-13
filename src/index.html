@@ -2,12 +2,45 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>CryptoAnalyzer</title>
+  <title>Crypto Analyzer - Trading Tools</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    #app-loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0d0d0d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #3a3a3a;
+      border-top-color: #4a9eff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
-  <app-root></app-root>
+  <app-root>
+    <div id="app-loading">
+      <div class="spinner"></div>
+      <p>Cargando Crypto Analyzer...</p>
+    </div>
+  </app-root>
 </body>
 </html>
