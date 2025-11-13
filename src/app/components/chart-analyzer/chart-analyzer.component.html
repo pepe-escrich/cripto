@@ -1,0 +1,154 @@
+<div class="chart-analyzer">
+  <!-- Header con stats -->
+  <div class="chart-header">
+    <div class="pair-info">
+      <h2 class="pair-name">{{ selectedPair.displayName }}</h2>
+      <div class="price-info">
+        <span class="current-price">{{ formatPrice(currentPrice) }}</span>
+        <span class="price-change" [class.positive]="isPriceUp" [class.negative]="!isPriceUp">
+          {{ isPriceUp ? '+' : '' }}{{ priceChangePercent.toFixed(2) }}%
+        </span>
+      </div>
+      <div class="volume-info">
+        <span class="label">Vol 24h:</span>
+        <span class="value">{{ formatVolume(volume24h) }} USDT</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controles -->
+  <div class="chart-controls">
+    <!-- Selector de par -->
+    <div class="control-group">
+      <label>Par de Trading</label>
+      <div class="pair-selector">
+        <select [(ngModel)]="selectedPair.symbol" (change)="onPairChange()" class="select-input">
+          <option *ngFor="let pair of tradingPairs" [value]="pair.symbol">
+            {{ pair.displayName }}
+          </option>
+        </select>
+        <div class="custom-pair">
+          <input
+            type="text"
+            [(ngModel)]="customPairSymbol"
+            placeholder="Custom (ej: ADAUSDT)"
+            class="text-input"
+            (keyup.enter)="onAddCustomPair()"
+          />
+          <button (click)="onAddCustomPair()" class="btn-add">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selector de timeframe -->
+    <div class="control-group">
+      <label>Timeframe</label>
+      <div class="timeframe-selector">
+        <button
+          *ngFor="let tf of timeframes"
+          (click)="selectedTimeframe = tf; onTimeframeChange()"
+          [class.active]="selectedTimeframe.value === tf.value"
+          class="btn-timeframe"
+        >
+          {{ tf.label }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Selector de auto-refresh -->
+    <div class="control-group">
+      <label>Auto-Refresh</label>
+      <div class="refresh-selector">
+        <select [(ngModel)]="selectedRefreshInterval.value" (change)="onRefreshIntervalChange()" class="select-input">
+          <option *ngFor="let interval of refreshIntervals" [value]="interval.value">
+            {{ interval.label }}
+          </option>
+        </select>
+        <button (click)="onManualRefresh()" class="btn-refresh" [disabled]="isLoading">
+          🔄
+        </button>
+      </div>
+    </div>
+
+    <!-- Indicadores técnicos -->
+    <div class="control-group indicators-group">
+      <label>Indicadores</label>
+      <div class="indicators-toggles">
+        <button
+          (click)="onToggleIndicator('rsi')"
+          [class.active]="settings.indicators.rsi"
+          class="btn-indicator"
+        >
+          RSI
+        </button>
+        <button
+          (click)="onToggleIndicator('divergences')"
+          [class.active]="settings.indicators.divergences"
+          class="btn-indicator"
+        >
+          Divergencias
+        </button>
+        <button
+          (click)="onToggleIndicator('frvpLongTerm')"
+          [class.active]="settings.indicators.frvpLongTerm"
+          class="btn-indicator"
+        >
+          FRVP Long
+        </button>
+        <button
+          (click)="onToggleIndicator('frvpShortTerm')"
+          [class.active]="settings.indicators.frvpShortTerm"
+          class="btn-indicator"
+        >
+          FRVP Short
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico -->
+  <div class="chart-wrapper">
+    <div #chartContainer class="chart-container"></div>
+    <div *ngIf="isLoading" class="loading-overlay">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Panel de indicadores -->
+  <div class="indicators-panel" *ngIf="settings.indicators.rsi || settings.indicators.divergences">
+    <div class="indicator-card" *ngIf="settings.indicators.rsi">
+      <div class="indicator-header">
+        <span class="indicator-name">RSI (14)</span>
+        <span class="indicator-value" [class.overbought]="isRSIOverbought" [class.oversold]="isRSIOversold">
+          {{ rsiValue.toFixed(2) }}
+        </span>
+      </div>
+      <div class="rsi-gauge">
+        <div class="gauge-bar">
+          <div class="gauge-fill" [style.width.%]="rsiValue"></div>
+          <div class="gauge-marker oversold" style="left: 30%"></div>
+          <div class="gauge-marker overbought" style="left: 70%"></div>
+        </div>
+        <div class="gauge-labels">
+          <span>0</span>
+          <span>30</span>
+          <span>70</span>
+          <span>100</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="indicator-card" *ngIf="settings.indicators.divergences">
+      <div class="indicator-header">
+        <span class="indicator-name">Divergencias</span>
+        <span class="indicator-value">{{ divergencesCount }}</span>
+      </div>
+      <div class="divergence-info">
+        <div class="legend">
+          <span class="legend-item bullish">🟢 Alcista</span>
+          <span class="legend-item bearish">🔴 Bajista</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

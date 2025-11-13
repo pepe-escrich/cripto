@@ -1,0 +1,312 @@
+<div class="order-setup">
+  <!-- Header -->
+  <div class="setup-header">
+    <h2>Setup de Órdenes</h2>
+    <p class="subtitle">Gestión de riesgo y cálculo de posición</p>
+  </div>
+
+  <!-- Selector de par y precio -->
+  <div class="price-section">
+    <div class="pair-selector">
+      <label>Par de Trading</label>
+      <select [(ngModel)]="selectedPair.symbol" (change)="onPairChange()" class="select-input">
+        <option *ngFor="let pair of tradingPairs" [value]="pair.symbol">
+          {{ pair.displayName }}
+        </option>
+      </select>
+    </div>
+
+    <div class="current-price-box">
+      <div class="price-label">Precio Actual</div>
+      <div class="price-value" *ngIf="!isLoading">{{ formatPrice(currentPrice) }}</div>
+      <div class="price-loading" *ngIf="isLoading">Cargando...</div>
+      <div class="price-auto-refresh">🔄 Auto-refresh cada 10s</div>
+    </div>
+  </div>
+
+  <!-- Tipo de orden -->
+  <div class="order-type-section">
+    <label>Tipo de Orden</label>
+    <div class="order-type-buttons">
+      <button
+        (click)="onOrderTypeChange('long')"
+        [class.active]="orderType === 'long'"
+        class="btn-order-type long"
+      >
+        LONG 📈
+      </button>
+      <button
+        (click)="onOrderTypeChange('short')"
+        [class.active]="orderType === 'short'"
+        class="btn-order-type short"
+      >
+        SHORT 📉
+      </button>
+    </div>
+  </div>
+
+  <!-- Formulario de inputs -->
+  <div class="setup-form">
+    <!-- Capital disponible -->
+    <div class="form-group">
+      <label for="capital">
+        <span class="label-text">Capital Disponible</span>
+        <span class="label-value">{{ formatCurrency(capital) }} USDT</span>
+      </label>
+      <input
+        id="capital"
+        type="number"
+        [(ngModel)]="capital"
+        (ngModelChange)="onCapitalChange()"
+        min="10"
+        step="50"
+        class="input-field"
+      />
+    </div>
+
+    <!-- Porcentaje de riesgo -->
+    <div class="form-group">
+      <label for="risk">
+        <span class="label-text">% de Riesgo Deseado</span>
+        <span class="label-value risk">{{ riskPercentage }}%</span>
+      </label>
+      <div class="risk-buttons">
+        <button
+          *ngFor="let risk of riskOptions"
+          (click)="riskPercentage = risk; onRiskPercentageChange()"
+          [class.active]="riskPercentage === risk"
+          class="btn-risk"
+        >
+          {{ risk }}%
+        </button>
+      </div>
+      <input
+        id="risk"
+        type="range"
+        [(ngModel)]="riskPercentage"
+        (ngModelChange)="onRiskPercentageChange()"
+        min="0.5"
+        max="10"
+        step="0.5"
+        class="slider"
+      />
+    </div>
+
+    <!-- Ratio Reward/Risk -->
+    <div class="form-group">
+      <label for="rrRatio">
+        <span class="label-text">Ratio Reward:Risk</span>
+        <span class="label-value rr">{{ rewardRiskRatio }}:1</span>
+      </label>
+      <div class="rr-buttons">
+        <button
+          *ngFor="let rr of rrRatioOptions"
+          (click)="rewardRiskRatio = rr.value; onRewardRiskRatioChange()"
+          [class.active]="rewardRiskRatio === rr.value"
+          class="btn-rr"
+        >
+          {{ rr.label }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advertencia si el setup no es seguro -->
+  <div *ngIf="!isSetupSafe && isCalculated" class="warning-box">
+    ⚠️ {{ setupWarning }}
+  </div>
+
+  <!-- Resultados del Setup -->
+  <div *ngIf="isCalculated && setup" class="setup-results">
+    <!-- Perfil de riesgo -->
+    <div class="risk-profile">
+      <div class="risk-header">
+        <span class="risk-label">Perfil de Riesgo</span>
+        <span class="risk-badge" [style.background]="setupRiskLevelColor">
+          {{ setupRiskLevelText }}
+        </span>
+      </div>
+      <div class="risk-detail">
+        Apalancamiento sugerido: <strong>{{ setup.suggestedLeverage }}x</strong>
+      </div>
+    </div>
+
+    <!-- Información de la posición -->
+    <div class="position-info-card">
+      <h3>📊 Información de la Posición</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Tamaño Posición</span>
+          <span class="info-value">{{ formatCurrency(setup.positionSize!) }} USDT</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Apalancamiento</span>
+          <span class="info-value leverage">{{ setup.suggestedLeverage }}x</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Capital en Riesgo</span>
+          <span class="info-value risk">{{ formatCurrency(setup.maxLoss!) }} USDT</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">% del Capital</span>
+          <span class="info-value">{{ formatPercent(setup.maxLossPercent!) }}%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Niveles de precio -->
+    <div class="price-levels-card">
+      <h3>📍 Niveles de Precio</h3>
+
+      <!-- Precio de entrada -->
+      <div class="price-level entry">
+        <div class="level-header">
+          <span class="level-label">Precio de Entrada</span>
+          <span class="level-icon">🎯</span>
+        </div>
+        <div class="level-value">{{ formatPrice(currentPrice) }}</div>
+      </div>
+
+      <!-- Take Profit -->
+      <div class="price-level take-profit">
+        <div class="level-header">
+          <span class="level-label">Take Profit</span>
+          <span class="level-icon">✅</span>
+        </div>
+        <div class="level-value">{{ formatPrice(setup.takeProfit!) }}</div>
+        <div class="level-distance positive">
+          +{{ formatPercent(takeProfitDistance) }}% desde entrada
+        </div>
+      </div>
+
+      <!-- Stop Loss -->
+      <div class="price-level stop-loss">
+        <div class="level-header">
+          <span class="level-label">Stop Loss</span>
+          <span class="level-icon">🛑</span>
+        </div>
+        <div class="level-value">{{ formatPrice(setup.stopLoss!) }}</div>
+        <div class="level-distance negative">
+          {{ formatPercent(stopLossDistance) }}% desde entrada
+        </div>
+      </div>
+
+      <!-- Liquidación -->
+      <div class="price-level liquidation">
+        <div class="level-header">
+          <span class="level-label">Liquidación</span>
+          <span class="level-icon">⚠️</span>
+        </div>
+        <div class="level-value">{{ formatPrice(setup.liquidationPrice!) }}</div>
+        <div class="level-distance danger">
+          {{ formatPercent(liquidationDistance) }}% desde entrada
+        </div>
+      </div>
+    </div>
+
+    <!-- Resultados esperados -->
+    <div class="expected-results">
+      <h3>💰 Resultados Esperados</h3>
+
+      <div class="results-comparison">
+        <!-- Ganancia -->
+        <div class="result-box profit">
+          <div class="result-icon">📈</div>
+          <div class="result-label">Si alcanza TP</div>
+          <div class="result-value positive">
+            +{{ formatCurrency(setup.potentialGain!) }} USDT
+          </div>
+          <div class="result-percent positive">
+            +{{ formatPercent(setup.potentialGainPercent!) }}%
+          </div>
+          <div class="result-final">
+            Capital final: {{ formatCurrency(capital + setup.potentialGain!) }} USDT
+          </div>
+        </div>
+
+        <!-- Pérdida -->
+        <div class="result-box loss">
+          <div class="result-icon">📉</div>
+          <div class="result-label">Si alcanza SL</div>
+          <div class="result-value negative">
+            -{{ formatCurrency(setup.maxLoss!) }} USDT
+          </div>
+          <div class="result-percent negative">
+            -{{ formatPercent(setup.maxLossPercent!) }}%
+          </div>
+          <div class="result-final">
+            Capital final: {{ formatCurrency(capital - setup.maxLoss!) }} USDT
+          </div>
+        </div>
+      </div>
+
+      <!-- Ratio R:R visual -->
+      <div class="rr-visual">
+        <div class="rr-label">Ratio Reward:Risk</div>
+        <div class="rr-bar">
+          <div class="rr-segment profit" [style.flex]="rewardRiskRatio">
+            <span>{{ rewardRiskRatio }}R</span>
+          </div>
+          <div class="rr-segment loss" style="flex: 1">
+            <span>1R</span>
+          </div>
+        </div>
+        <div class="rr-description">
+          Por cada $1 que arriesgas, puedes ganar ${{ rewardRiskRatio }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen visual -->
+    <div class="visual-summary">
+      <h3>📋 Resumen del Setup</h3>
+      <div class="summary-stats">
+        <div class="stat-item">
+          <div class="stat-icon">💵</div>
+          <div class="stat-content">
+            <div class="stat-label">Capital Total</div>
+            <div class="stat-value">{{ formatCurrency(capital) }} USDT</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon">📊</div>
+          <div class="stat-content">
+            <div class="stat-label">Tamaño Posición</div>
+            <div class="stat-value">{{ formatCurrency(setup.positionSize!) }} USDT</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon">⚖️</div>
+          <div class="stat-content">
+            <div class="stat-label">Apalancamiento</div>
+            <div class="stat-value">{{ setup.suggestedLeverage }}x</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-content">
+            <div class="stat-label">Ratio R:R</div>
+            <div class="stat-value">{{ rewardRiskRatio }}:1</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón para copiar -->
+    <button (click)="copySetupToClipboard()" class="btn-copy">
+      📋 Copiar Setup al Portapapeles
+    </button>
+
+    <!-- Tips -->
+    <div class="tips-box">
+      <h4>💡 Tips de Trading</h4>
+      <ul>
+        <li>Nunca arriesgues más del 1-3% de tu capital en una sola operación</li>
+        <li>Un ratio R:R de 2:1 o mayor mejora tu rentabilidad a largo plazo</li>
+        <li>Coloca el stop loss antes de abrir la posición</li>
+        <li>No muevas el stop loss para evitar pérdidas mayores</li>
+        <li>Considera tomar ganancias parciales en el camino al take profit</li>
+      </ul>
+    </div>
+  </div>
+</div>

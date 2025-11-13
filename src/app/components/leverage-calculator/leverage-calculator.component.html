@@ -1,0 +1,235 @@
+<div class="leverage-calculator">
+  <!-- Header -->
+  <div class="calculator-header">
+    <h2>Calculadora de Apalancamiento</h2>
+    <p class="subtitle">Simula tu operación y calcula comisiones</p>
+  </div>
+
+  <!-- Tipo de posición -->
+  <div class="position-type-selector">
+    <button
+      (click)="setPositionType('long')"
+      [class.active]="positionType === 'long'"
+      class="btn-position long"
+    >
+      LONG 📈
+    </button>
+    <button
+      (click)="setPositionType('short')"
+      [class.active]="positionType === 'short'"
+      class="btn-position short"
+    >
+      SHORT 📉
+    </button>
+  </div>
+
+  <!-- Formulario de inputs -->
+  <div class="calculator-form">
+    <!-- Inversión -->
+    <div class="form-group">
+      <label for="investment">
+        <span class="label-text">Inversión (USDT)</span>
+        <span class="label-value">{{ formatCurrency(investment) }}</span>
+      </label>
+      <input
+        id="investment"
+        type="number"
+        [(ngModel)]="investment"
+        (ngModelChange)="onInvestmentChange()"
+        min="1"
+        step="10"
+        class="input-field"
+      />
+    </div>
+
+    <!-- Precio de entrada -->
+    <div class="form-group">
+      <label for="entryPrice">
+        <span class="label-text">Precio de Entrada</span>
+        <span class="label-value">{{ formatPrice(entryPrice) }}</span>
+      </label>
+      <input
+        id="entryPrice"
+        type="number"
+        [(ngModel)]="entryPrice"
+        (ngModelChange)="onEntryPriceChange()"
+        min="0.01"
+        step="100"
+        class="input-field"
+      />
+    </div>
+
+    <!-- Apalancamiento -->
+    <div class="form-group">
+      <label for="leverage">
+        <span class="label-text">Apalancamiento</span>
+        <span class="label-value leverage-value">{{ leverage }}x</span>
+      </label>
+      <input
+        id="leverage"
+        type="range"
+        [(ngModel)]="leverage"
+        (ngModelChange)="onLeverageChange()"
+        min="1"
+        max="125"
+        step="1"
+        class="slider"
+      />
+      <div class="leverage-marks">
+        <span *ngFor="let mark of leverageMarks" class="mark">{{ mark }}x</span>
+      </div>
+    </div>
+
+    <!-- Precio objetivo -->
+    <div class="form-group">
+      <label for="targetPrice">
+        <span class="label-text">Precio Objetivo</span>
+        <span class="label-value">{{ formatPrice(targetPrice) }}</span>
+      </label>
+      <input
+        id="targetPrice"
+        type="number"
+        [(ngModel)]="targetPrice"
+        (ngModelChange)="onTargetPriceChange()"
+        min="0.01"
+        step="100"
+        class="input-field"
+      />
+    </div>
+
+    <!-- Días estimados -->
+    <div class="form-group">
+      <label for="days">
+        <span class="label-text">Días Estimados</span>
+        <span class="label-value">{{ days }}</span>
+      </label>
+      <input
+        id="days"
+        type="number"
+        [(ngModel)]="days"
+        (ngModelChange)="onDaysChange()"
+        min="0.1"
+        max="365"
+        step="0.5"
+        class="input-field"
+      />
+    </div>
+
+    <!-- Tipo de comisión -->
+    <div class="form-group checkbox-group">
+      <label class="checkbox-label">
+        <input
+          type="checkbox"
+          [(ngModel)]="useMakerFees"
+          (ngModelChange)="onFeeTypeChange()"
+          class="checkbox-input"
+        />
+        <span>Usar comisiones Maker (0.02%) en vez de Taker (0.04%)</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Advertencia si el target no es alcanzable -->
+  <div *ngIf="!isTargetReachable && isCalculated" class="warning-message">
+    ⚠️ {{ warningMessage }}
+  </div>
+
+  <!-- Resultados -->
+  <div *ngIf="isCalculated && calculation" class="results-section">
+    <!-- Nivel de riesgo -->
+    <div class="risk-indicator">
+      <div class="risk-header">
+        <span class="risk-label">Nivel de Riesgo</span>
+        <span class="risk-value" [style.color]="riskLevelColor">{{ riskLevelText }}</span>
+      </div>
+      <div class="risk-bar">
+        <div
+          class="risk-fill"
+          [style.width.%]="(leverage / 125) * 100"
+          [style.background]="riskLevelColor"
+        ></div>
+      </div>
+    </div>
+
+    <!-- Tarjetas de resultados principales -->
+    <div class="results-grid">
+      <!-- Valor de posición -->
+      <div class="result-card">
+        <div class="card-icon">💰</div>
+        <div class="card-label">Valor Posición</div>
+        <div class="card-value">{{ formatCurrency(positionValue) }} USDT</div>
+      </div>
+
+      <!-- Precio de liquidación -->
+      <div class="result-card danger">
+        <div class="card-icon">⚠️</div>
+        <div class="card-label">Liquidación</div>
+        <div class="card-value">{{ formatPrice(calculation.liquidationPrice) }}</div>
+        <div class="card-subtitle">{{ formatPercent(distanceToLiquidation) }}% del precio</div>
+      </div>
+
+      <!-- Ganancia potencial -->
+      <div class="result-card" [class.positive]="isPositiveROI" [class.negative]="!isPositiveROI">
+        <div class="card-icon">{{ isPositiveROI ? '📈' : '📉' }}</div>
+        <div class="card-label">Ganancia Bruta</div>
+        <div class="card-value">
+          {{ isPositiveROI ? '+' : '' }}{{ formatCurrency(calculation.potentialProfit) }} USDT
+        </div>
+      </div>
+
+      <!-- ROI -->
+      <div class="result-card highlight" [class.positive]="isPositiveROI" [class.negative]="!isPositiveROI">
+        <div class="card-icon">🎯</div>
+        <div class="card-label">ROI</div>
+        <div class="card-value">
+          {{ isPositiveROI ? '+' : '' }}{{ formatPercent(calculation.roi) }}%
+        </div>
+      </div>
+    </div>
+
+    <!-- Desglose de comisiones -->
+    <div class="fees-breakdown">
+      <h3 class="section-title">Desglose de Comisiones</h3>
+      <div class="fees-list">
+        <div class="fee-item">
+          <span class="fee-label">Comisión de Apertura</span>
+          <span class="fee-value">{{ formatCurrency(calculation.openingFee) }} USDT</span>
+        </div>
+        <div class="fee-item">
+          <span class="fee-label">Comisión de Cierre</span>
+          <span class="fee-value">{{ formatCurrency(calculation.closingFee) }} USDT</span>
+        </div>
+        <div class="fee-item">
+          <span class="fee-label">Funding Fees ({{ days }} días)</span>
+          <span class="fee-value">{{ formatCurrency(calculation.fundingFees) }} USDT</span>
+        </div>
+        <div class="fee-item total">
+          <span class="fee-label">Total Comisiones</span>
+          <span class="fee-value">{{ formatCurrency(calculation.totalFees) }} USDT</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resultado neto -->
+    <div class="net-result" [class.positive]="calculation.netProfit > 0" [class.negative]="calculation.netProfit < 0">
+      <div class="net-label">Ganancia Neta (después de comisiones)</div>
+      <div class="net-value">
+        {{ calculation.netProfit > 0 ? '+' : '' }}{{ formatCurrency(calculation.netProfit) }} USDT
+      </div>
+      <div class="net-subtitle">
+        Capital final: {{ formatCurrency(investment + calculation.netProfit) }} USDT
+      </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="info-box">
+      <h4>ℹ️ Información Importante</h4>
+      <ul>
+        <li>Los cálculos son estimados y pueden variar en operaciones reales</li>
+        <li>El funding rate puede cambiar cada 8 horas (se usa 0.01% promedio)</li>
+        <li>En caso de liquidación, perderás el 100% de tu inversión ({{ formatCurrency(investment) }} USDT)</li>
+        <li>Mayor apalancamiento = Mayor riesgo de liquidación</li>
+      </ul>
+    </div>
+  </div>
+</div>
