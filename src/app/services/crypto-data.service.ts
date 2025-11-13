@@ -88,15 +88,15 @@ export class CryptoDataService {
   /**
    * Crea un observable que emite datos de velas a intervalos regulares
    */
-  getKlinesStream(symbol: string, interval: string, refreshMs: number, limit: number = 500): Observable<CandleData[]> {
+  getKlinesStream(symbol: string, timeInterval: string, refreshMs: number, limit: number = 500): Observable<CandleData[]> {
     if (refreshMs === 0) {
       // Si es manual, solo emite una vez
-      return this.getKlines(symbol, interval, limit);
+      return this.getKlines(symbol, timeInterval, limit);
     }
 
     // Emite inmediatamente y luego a intervalos
     return interval(refreshMs).pipe(
-      switchMap(() => this.getKlines(symbol, interval, limit))
+      switchMap(() => this.getKlines(symbol, timeInterval, limit))
     );
   }
 

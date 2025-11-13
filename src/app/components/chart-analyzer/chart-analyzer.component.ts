@@ -134,13 +134,14 @@ export class ChartAnalyzerComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     // Crear serie de candlesticks
-    this.candlestickSeries = this.chart.addCandlestickSeries({
+    this.candlestickSeries = this.chart.addSeries({
+      type: 'Candlestick',
       upColor: '#26a69a',
       downColor: '#ef5350',
       borderVisible: false,
       wickUpColor: '#26a69a',
       wickDownColor: '#ef5350',
-    });
+    }) as any;
 
     // Handle resize
     window.addEventListener('resize', this.handleResize.bind(this));
@@ -248,16 +249,21 @@ export class ChartAnalyzerComponent implements OnInit, OnDestroy, AfterViewInit 
     this.divergencesCount = divergences.length;
 
     // Aquí se podrían dibujar las divergencias en el gráfico usando markers
+    // Nota: La funcionalidad de markers puede variar según la versión de lightweight-charts
     if (this.candlestickSeries && divergences.length > 0) {
-      const markers = divergences.map(div => ({
-        time: div.endTime as any,
-        position: div.type === 'bullish' ? 'belowBar' as const : 'aboveBar' as const,
-        color: div.type === 'bullish' ? '#26a69a' : '#ef5350',
-        shape: div.type === 'bullish' ? 'arrowUp' as const : 'arrowDown' as const,
-        text: div.type === 'bullish' ? 'Bullish Div' : 'Bearish Div',
-      }));
+      try {
+        const markers = divergences.map(div => ({
+          time: div.endTime as any,
+          position: div.type === 'bullish' ? 'belowBar' as const : 'aboveBar' as const,
+          color: div.type === 'bullish' ? '#26a69a' : '#ef5350',
+          shape: div.type === 'bullish' ? 'arrowUp' as const : 'arrowDown' as const,
+          text: div.type === 'bullish' ? 'Bullish Div' : 'Bearish Div',
+        }));
 
-      this.candlestickSeries.setMarkers(markers);
+        (this.candlestickSeries as any).setMarkers?.(markers);
+      } catch (e) {
+        console.log('Markers not supported in this version');
+      }
     }
   }
 

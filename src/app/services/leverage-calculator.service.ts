@@ -134,13 +134,13 @@ export class LeverageCalculatorService {
     const maxLoss = capital * (riskPercentage / 100);
 
     // Calcular stop loss (ejemplo: 2% del precio para long, -2% para short)
-    const stopLossPercent = 2; // Porcentaje base
+    const stopLossBasePercent = 2; // Porcentaje base
     let stopLoss: number;
 
     if (orderType === 'long') {
-      stopLoss = currentPrice * (1 - stopLossPercent / 100);
+      stopLoss = currentPrice * (1 - stopLossBasePercent / 100);
     } else {
-      stopLoss = currentPrice * (1 + stopLossPercent / 100);
+      stopLoss = currentPrice * (1 + stopLossBasePercent / 100);
     }
 
     // Distancia al stop loss
