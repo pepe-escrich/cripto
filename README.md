@@ -84,6 +84,67 @@ ng build --configuration production
 # Los archivos de build estarán en dist/
 ```
 
+## 🌐 Despliegue en Vercel
+
+La aplicación está configurada para desplegarse fácilmente en Vercel:
+
+### Opción 1: Despliegue desde GitHub (Recomendado)
+
+1. **Sube tu código a GitHub** (si aún no lo has hecho)
+
+2. **Ve a [Vercel](https://vercel.com)** y crea una cuenta o inicia sesión
+
+3. **Importa tu proyecto:**
+   - Click en "Add New Project"
+   - Selecciona tu repositorio de GitHub
+   - Vercel detectará automáticamente que es un proyecto Angular
+
+4. **Configura el proyecto:**
+   - Framework Preset: **Angular**
+   - Build Command: `npm run vercel-build` (ya configurado)
+   - Output Directory: `dist/crypto-analyzer/browser` (ya configurado en vercel.json)
+
+5. **Deploy:** Click en "Deploy" y espera unos minutos
+
+6. **¡Listo!** Tu app estará disponible en una URL como `https://crypto-analyzer.vercel.app`
+
+### Opción 2: Despliegue desde CLI
+
+```bash
+# Instalar Vercel CLI
+npm install -g vercel
+
+# Login en Vercel
+vercel login
+
+# Desplegar (primera vez)
+vercel
+
+# Desplegar a producción
+vercel --prod
+```
+
+### Configuración incluida
+
+El proyecto ya incluye:
+- ✅ `vercel.json` - Configuración de rutas para Angular SPA
+- ✅ `.vercelignore` - Archivos a ignorar en el despliegue
+- ✅ `vercel-build` script en package.json
+
+### Variables de entorno (opcional)
+
+Si necesitas variables de entorno, créalas en Vercel:
+1. Ve a tu proyecto en Vercel
+2. Settings → Environment Variables
+3. Agrega las variables necesarias
+
+### Actualizaciones automáticas
+
+Una vez conectado a GitHub:
+- Cada push a la rama principal desplegará automáticamente
+- Los pull requests crearán preview deployments
+- Rollback instantáneo desde el dashboard de Vercel
+
 ## 📁 Estructura del Proyecto
 
 ```
