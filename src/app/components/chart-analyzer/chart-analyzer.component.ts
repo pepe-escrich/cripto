@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { createChart, IChartApi, ISeriesApi, CandlestickData, LineData, HistogramData } from 'lightweight-charts';
+import { createChart, CandlestickData, LineData, HistogramData } from 'lightweight-charts';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -20,10 +20,10 @@ export class ChartAnalyzerComponent implements OnInit, OnDestroy, AfterViewInit 
   @ViewChild('chartContainer', { static: false }) chartContainer!: ElementRef;
 
   // Chart instance
-  private chart?: IChartApi;
-  private candlestickSeries?: ISeriesApi<'Candlestick'>;
-  private rsiSeries?: ISeriesApi<'Line'>;
-  private volumeSeries?: ISeriesApi<'Histogram'>;
+  private chart?: any;
+  private candlestickSeries?: any;
+  private rsiSeries?: any;
+  private volumeSeries?: any;
 
   // Data
   tradingPairs: TradingPair[] = [];
@@ -134,14 +134,13 @@ export class ChartAnalyzerComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     // Crear serie de candlesticks
-    this.candlestickSeries = this.chart.addSeries({
-      type: 'Candlestick',
+    this.candlestickSeries = (this.chart as any).addCandlestickSeries({
       upColor: '#26a69a',
       downColor: '#ef5350',
       borderVisible: false,
       wickUpColor: '#26a69a',
       wickDownColor: '#ef5350',
-    }) as any;
+    });
 
     // Handle resize
     window.addEventListener('resize', this.handleResize.bind(this));
